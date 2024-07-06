@@ -1,0 +1,701 @@
+<!doctype html>
+	<html>
+		<head>
+			<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Location</title>
+		<link rel="shortcut icon" href="https://bulma.io/favicons/favicon.ico">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" integrity="sha256-jTIdiMuX/e3DGJUGwl3pKSxuc6YOuqtJYkM0bGQESA4=" crossorigin="anonymous">
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js" integrity="sha256-kXTEJcRFN330VirZFl6gj9+UM6gIKW195fYZeR3xDhc=" crossorigin="anonymous"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/buefy@0.9.20/dist/buefy.min.css" integrity="sha256-cZFAFUr9y/j68nhE0qJ/aRFVkyhfJM15oRgf7EX9or4=" crossorigin="anonymous">
+		<script src="https://cdn.jsdelivr.net/npm/buefy@0.9.20/dist/buefy.min.js" integrity="sha256-04e8ZDW7V6fWTmeEbDTZ0xJPjvX3XmbgxW+pKayWPuQ=" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+		</head>
+		<body>
+			<div id="app" class="container is-fluid">
+				<br>
+				<section class="b-tooltips">
+					<b-tooltip label="Add a location"
+					position="is-right"
+					type="has-text-black-bis"
+					square>
+						<b-button 
+						v-on:click="open_add_location_modal" 
+						type="is-primary">
+							<b-icon
+							pack="fa-solid"
+							icon="plus"
+							size="is-small">
+							</b-icon>
+						</b-button>
+					</b-tooltip>
+				</section>
+				<br>
+
+				<b-table 
+				:data="locations" 
+				hoverable narrowed
+				icon-pack="fa-solid"
+				paginated
+				:per-page="10"
+				pagination-size="is-small">
+					<b-table-column label="S.No"
+					field="s_no"
+					numeric v-slot="props"
+					sortable
+					centered>
+						[[props.row.s_no]]
+					</b-table-column>
+					<b-table-column label="Name"
+					field="name" 
+					v-slot="props"
+					sortable
+					searchable
+					>
+					<a @click="open_information_location_modal(props.row)">
+						[[props.row.name]]
+					</a>
+					</b-table-column>
+					<b-table-column label="Status"
+					field="boolean"
+					v-slot="props"
+					sortable
+					searchable
+					:custom-search="active_searchable"
+					>
+					<span class="tag" :class="status_type(props.row.boolean)">
+						[[props.row.boolean]]
+					</span>
+					</b-table-column>
+					<b-table-column
+					label="Actions"
+					v-slot="props"
+					centered>
+						<b-button
+						class="button"
+						type="is-grey is-outlined"
+						size="is-small"
+						v-on:click="open_update_location_modal(props.index)">
+							<b-icon
+							pack="fa-solid"
+							icon="pen"
+							size="is-small"
+							type="is-grey">
+							</b-icon>
+						</b-button>
+						<b-button
+						class="button"
+						type="is-grey is-outlined"
+						size="is-small"
+						v-on:click="open_delete_location_modal(props.index, props.row)">
+							<b-icon
+							pack="fa-solid"
+							icon="trash"
+							size="is-small"
+							type="is-danger is-dark">
+							</b-icon>
+						</b-button>
+					</b-table-column>
+			</b-table>
+
+			<div class="modal" id="is_add_modal_open">
+			<div class="modal-background"></div>
+			<div class="modal-card">
+				<header class="modal-card-head">
+					<p class="modal-card-title">
+						Add a location
+					</p>
+					<button type="button" class="delete" @click="close_add_location_modal"></button>
+				</header>
+
+			<b-loading :is-full-page="false" v-model="is_loading"></b-loading>
+				<section class="modal-card-body">
+					<div class="container is-fluid">
+					<div class="notification is-danger is-light" v-if="is_add_show_errors" 
+					style="margin-bottom: 0.5rem;">
+						[[create_errors]]
+					</div>
+					<div class="field" style="margin-bottom: 0rem;">
+						<label class="label">Name
+							<b-tooltip label="Add a location name" 
+							position="is-right"
+							type="has-text-black-bis"
+							size="is-small"
+							square>
+							<span class="icon has-text-grey">
+							  <i class="fa-solid fa-circle-info"></i>
+							</span>
+						</b-tooltip>
+						</label>
+						<b-input
+						v-model="add_location_name"
+						minlength="4"
+						maxlength="100"
+						required>
+						</b-input>
+					</div>
+					<div class="field" style="margin-bottom: 1.25rem;">
+						<label class="label">Active
+							<b-tooltip label="Add location status" 
+							position="is-right"
+							type="has-text-black-bis"
+							size="is-small"
+							square>
+							<span class="icon has-text-grey">
+							  <i class="fa-solid fa-circle-info"></i>
+							</span>
+						</b-tooltip>
+						</label>
+						<b-switch 
+						v-model="is_switched" 
+						true-value="Active" 
+						false-value="Inactive" 
+						required>
+							[[is_switched]]
+						</b-switch>
+					</div>
+
+					<b-collapse class="card mb-4" animation="slide" 
+					#trigger="props">
+						<div class="card-header" role="button" 
+						v-on:click="is_add_additional_options=!is_add_additional_options">
+							<p class="card-header-title"> 
+								Additional options
+							</p>
+							<a class="card-header-icon">
+                        		<b-icon 
+                        		pack="fa-solid"
+                          		:icon="props.open ? 'angle-down' : 'angle-up'" >
+                        		</b-icon>
+                    		</a>
+						</div>
+
+						<div class="card-content" v-if="is_add_additional_options">
+                			<div class="content">
+			                   <div class="field" style="margin-bottom: 0rem;">
+			                   		<label class="label">Address line 1
+			                   			<b-tooltip label="Add a Address line 1" 
+			                   			position="is-right"
+			                   			type="has-text-black-bis"
+			                   			square
+			                   			>
+			                   			<span class="icon has-text-grey">
+			                   				<i class="fa-solid fa-circle-info"></i>
+			                   			</span>
+			                   			</b-tooltip>
+			                   		</label>
+									<b-input 
+									v-model="add_address_line_1"
+									minlength="4"
+									maxlength="100"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+									<label class="label">Address line 2
+										<b-tooltip label="Add a Address line 2" 
+											position="is-right"
+											type="has-text-black-bis"
+											square
+											>
+											<span class="icon has-text-grey">
+												<i class="fa-solid fa-circle-info"></i>
+											</span>
+											</b-tooltip>
+										</label>
+									<b-input
+									v-model="add_address_line_2"
+									minlength="4"
+									maxlength="100"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+									<label class="label">Address line 3
+										<b-tooltip label="Add a Address line 3" 
+											position="is-right"
+											type="has-text-black-bis"
+											square
+											>
+											<span class="icon has-text-grey">
+												<i class="fa-solid fa-circle-info"></i>
+											</span>
+											</b-tooltip>
+										</label>
+									<b-input
+									v-model="add_address_line_3"
+									minlength="4"
+									maxlength="100"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+									<label class="label">Postal code
+										<b-tooltip label="Add a postal code" 
+											position="is-right"
+											type="has-text-black-bis"
+											square
+											>
+											<span class="icon has-text-grey">
+												<i class="fa-solid fa-circle-info"></i>
+											</span>
+											</b-tooltip>
+										</label>
+									<b-input style="width: 250px;"
+									v-model="add_postal_code"
+									minlength="4"
+									maxlength="20"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 1rem;">
+									<label class="label">Select a country
+										<b-tooltip label="Select a country" 
+										position="is-right"
+										type="has-text-black-bis"
+										size="is-small"
+										square>
+										<span class="icon has-text-grey">
+											<i class="fa-solid fa-circle-info"></i>
+										</span>
+									</b-tooltip>
+									</label>
+									<b-select v-model="add_country" @input="set_states(add_country)">
+										<option v-for="key in selected_country" :value="key.name">
+											[[key.name]]
+										</option>
+									</b-select>
+								</div>
+								<div class="field" style="margin-bottom: 1rem;">
+									<label class="label">Select a state
+										<b-tooltip label="Select a state" 
+										position="is-right"
+										type="has-text-black-bis"
+										size="is-small"
+										square>
+										<span class="icon has-text-grey">
+										  <i class="fa-solid fa-circle-info"></i>
+										</span>
+									</b-tooltip>
+								</label>
+									<b-select v-model="add_state"  id="state">
+										<option v-for="item in selected_states" :value="item">
+										[[item]]
+										</option>
+									</b-select>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+									<label class="label">Latitude
+										<b-tooltip label="Add a latitude" 
+											position="is-right"
+											type="has-text-black-bis"
+											square
+											>
+											<span class="icon has-text-grey">
+												<i class="fa-solid fa-circle-info"></i>
+											</span>
+											</b-tooltip>
+										</label>
+									<b-input v-model="add_latitude" minlength="4" maxlength="22"></b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+									<label class="label">Longitude
+										<b-tooltip label="Add a longitude" 
+											position="is-right"
+											type="has-text-black-bis"
+											square
+											>
+											<span class="icon has-text-grey">
+												<i class="fa-solid fa-circle-info"></i>
+											</span>
+											</b-tooltip>
+										</label>
+									<b-input v-model="add_longitude" minlength="4" maxlength="22"></b-input>
+								</div>
+                		</div>
+            		</div>
+					</b-collapse>
+				</div>
+				</section>
+
+					<footer class="modal-card-foot">
+						<b-button
+						label="Save location"
+						type="is-link"
+						v-on:click="save_location_data">
+						</b-button>
+						<b-button
+						label="Save and add more"
+						v-on:click="open_add_more_location_modal">
+						</b-button>
+						<b-button
+						label="Close"
+						v-on:click="close_add_location_modal">
+						</b-button>
+				</footer>
+			</div>
+		</div>
+
+			<div class="modal" id="is_update_modal_open">
+				<div class="modal-background"></div>
+				<div class="modal-card">
+				<header class="modal-card-head">
+					<p class="modal-card-title">
+						Edit location
+					</p>
+					<button type="button" class="delete" @click="close_update_location_modal"></button>
+				</header>
+
+				<b-loading :is-full-page="false" v-model="is_loading"></b-loading>
+				<section class="modal-card-body">
+				<div class="container is-fluid">
+					<div class="notification is-danger is-light"
+				 		v-if="is_edit_show_errors" style="margin-bottom: 0.5rem;">
+						[[edit_errors]]
+					</div>
+					<div class="field" style="margin-bottom: 0rem;">
+						<label class="label">Name
+							<b-tooltip label="Edit location name" 
+							position="is-right"
+							type="has-text-black-bis"
+							square>
+								<span class="icon has-text-grey">
+									<i class="fa-solid fa-circle-info"></i>
+								</span>
+							</b-tooltip>
+						</label>
+						<b-input
+						v-model="edit_location_name"
+						minlength="4"
+						maxlength="100"
+						required>
+						</b-input>
+					</div>
+					<div class="field" style="margin-bottom: 1.25rem;">
+						<label class="label">Active
+							<b-tooltip label="Edit location status" 
+							position="is-right"
+							type="has-text-black-bis"
+							size="is-small"
+							square>
+							<span class="icon has-text-grey">
+							  <i class="fa-solid fa-circle-info"></i>
+							</span>
+						</b-tooltip>
+						</label>
+						<b-switch 
+						v-model="edit_boolean" 
+						true-value="Active"
+						false-value="Inactive" 
+						required>
+						</b-switch>
+					</div>
+
+					<b-collapse class="card mb-4" animation="slide" 
+					#trigger="props">
+						<div class="card-header" role="button" 
+						v-on:click="is_update_additional_options=!is_update_additional_options">
+							<p class="card-header-title" > 
+								Additional options
+							</p>
+							<a class="card-header-icon">
+                        		<b-icon 
+                        		pack="fa-solid"
+                          		:icon="props.open ? 'angle-down' : 'angle-up'" >
+                        		</b-icon>
+                    		</a>
+						</div>
+						<div class="card-content" v-if="is_update_additional_options">
+                			<div class="content">
+                				<div class="field" style="margin-bottom: 0rem;">
+                					<label class="label">Address line 1
+                						<b-tooltip label="Edit Address line 1" 
+                						position="is-right"
+                						type="has-text-black-bis"
+                						square>
+                							<span class="icon has-text-grey">
+                								<i class="fa-solid fa-circle-info"></i>
+                							</span>
+                						</b-tooltip>
+                					</label>
+									<b-input
+									v-model="edit_address_line_1"
+									minlength="4"
+									maxlength="100"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+                					<label class="label">Address line 2
+                						<b-tooltip label="Edit Address line 2" 
+                						position="is-right"
+                						type="has-text-black-bis"
+                						square>
+                							<span class="icon has-text-grey">
+                								<i class="fa-solid fa-circle-info"></i>
+                							</span>
+                						</b-tooltip>
+                					</label>
+									<b-input
+									v-model="edit_address_line_2"
+									minlength="4"
+									maxlength="100"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+                					<label class="label">Address line 3
+                						<b-tooltip label="Edit Address line 3" 
+                						position="is-right"
+                						type="has-text-black-bis"
+                						square>
+                							<span class="icon has-text-grey">
+                								<i class="fa-solid fa-circle-info"></i>
+                							</span>
+                						</b-tooltip>
+                					</label>
+									<b-input
+									v-model="edit_address_line_3"
+									minlength="4"
+									maxlength="100"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+                					<label class="label">Postal code
+                						<b-tooltip label="Edit postal code" 
+                						position="is-right"
+                						type="has-text-black-bis"
+                						square>
+                							<span class="icon has-text-grey">
+                								<i class="fa-solid fa-circle-info"></i>
+                							</span>
+                						</b-tooltip>
+                					</label>
+									<b-input style="width: 250px"
+									v-model="edit_postal_code"
+									minlength="4"
+									maxlength="20"
+									required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 1rem;">
+									<label class="label">Select a country
+										<b-tooltip label="Select a country" 
+										position="is-right"
+										type="has-text-black-bis"
+										size="is-small"
+										square>
+										<span class="icon has-text-grey">
+										  <i class="fa-solid fa-circle-info"></i>
+										</span>
+									</b-tooltip>
+									</label>
+									<b-select v-model="edit_country" 
+									@input="set_states(edit_country)">
+										<option v-for="key in selected_country" :value="key.name">[[key.name]]</option>
+									</b-select>
+								</div>
+								<div class="field" style="margin-bottom: 1rem;">
+									<label class="label">Select a state
+										<b-tooltip label="Select a state" 
+										position="is-right"
+										type="has-text-black-bis"
+										size="is-small"
+										square>
+										<span class="icon has-text-grey">
+										  <i class="fa-solid fa-circle-info"></i>
+										</span>
+									</b-tooltip>
+									</label>
+									<b-select v-model="edit_state">
+										<option>
+											[[edit_state]]
+										</option>
+									</b-select>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+                					<label class="label">Latitude
+                						<b-tooltip label="Edit latitude" 
+                						position="is-right"
+                						type="has-text-black-bis"
+                						square>
+                							<span class="icon has-text-grey">
+                								<i class="fa-solid fa-circle-info"></i>
+                							</span>
+                						</b-tooltip>
+                					</label>
+									<b-input v-model="edit_latitude" minlength="4" maxlength="22" required>
+									</b-input>
+								</div>
+								<div class="field" style="margin-bottom: 0rem;">
+                					<label class="label">Longitude
+                						<b-tooltip label="Edit longitude" 
+                						position="is-right"
+                						type="has-text-black-bis"
+                						square>
+                							<span class="icon has-text-grey">
+                								<i class="fa-solid fa-circle-info"></i>
+                							</span>
+                						</b-tooltip>
+                					</label>
+									<b-input v-model="edit_longitude" minlength="4" maxlength="22" required></b-input>
+								</div>
+							</div>
+						</div>
+					</b-collapse>
+				</div>
+				</section>
+
+					<footer class="modal-card-foot">
+						<b-button
+						label="Save location"
+						type="is-link"
+						v-on:click="update_location_data(locations, location_index)">
+						</b-button>
+						<b-button
+						label="Close"
+						v-on:click="close_update_location_modal">
+						</b-button>
+				</footer>
+				</div>
+			</div>
+
+			<div class="modal" id="is_delete_modal_open">
+			<div class="modal-background"></div>
+			<div class="modal-card" style='width: 400px'>
+				<header class="modal-card-head">
+					<p class="modal-card-title">Are you sure?</p>
+					<button type="button" class="delete" @click="close_delete_location_modal"></button>
+				</header>
+
+				<b-loading :is-full-page="false" v-model="is_loading"></b-loading>
+				<section class="modal-card-body">
+					<div class="notification is-danger is-light" v-if="is_delete_show_errors" 
+					style="margin-bottom: 1rem;">
+						[[delete_errors]]
+					</div>
+					<div class="media">
+						<div class="media-left">
+							<b-icon
+							icon="circle-exclamation"
+							custom-size="fa-2x"
+							size="is-large"
+							pack="fa-solid"
+							type="is-danger">
+							</b-icon>
+						</div>
+						<div class="media-content">
+							<p>
+								<div>Do you want to delete this location <strong>"[[delete_location_name]]"</strong>?</div>
+							</p>
+						</div>
+					</div>
+				</section>
+
+				<footer class="modal-card-foot">
+					<button
+					class="button is-danger"
+					v-on:click="delete_location_data(delete_index, locations)">
+						<span>Yes, Delete</span>
+					</button>
+					<button
+					class="button"
+					v-on:click="close_delete_location_modal">
+						<span>Cancel</span>
+					</button>
+				</footer>
+			</div>
+		</div>
+
+				<div class="modal" id="is_information_modal_open">
+					<div class="modal-background"></div>
+					<div class="modal-card">
+						<header class="modal-card-head">
+							<p class="modal-card-title">Information</p>
+							<button type="button" class="delete" v-on:click="close_information_location_modal"></button>
+						</header>
+
+						<section class="modal-card-body mb-4">
+							<div class="container is-fluid">
+							<div class="table-container">
+								<table class="table is-fullwidth">
+									<tr>
+										<th>Name</th>
+										<td>[[detail_information.name]]</td>
+									</tr>
+									<tr>
+										<th>Active</th>
+										<td>[[detail_information.boolean]]</td>
+									</tr>
+								</table>
+							</div>
+
+						<b-collapse class="card mb-4" animation="slide" #trigger="props" 
+						v-if="is_additional_options_allowed">
+							<div class="card-header" role="button" 
+							v-on:click="is_information_additional_options=!is_information_additional_options">
+								<p class="card-header-title"> 
+									Additional options
+								</p>
+								<a class="card-header-icon">
+			                        <b-icon 
+			                        pack="fa-solid"
+			                        :icon="props.open ? 'angle-down' : 'angle-up'" >
+			                        </b-icon>
+                    			</a>
+							</div>
+						
+						  <div class="card-content" v-if="is_information_additional_options">
+                			<div class="content">
+                				<div class="table-container">
+                					<table class="table is-fullwidth">
+                						<tr>
+										<th>Address line 1</th>
+										<td>[[detail_information.address_line_1]]</td>
+									</tr>
+									<tr>
+										<th>Address line 2</th>
+										<td>[[detail_information.address_line_2]]</td>
+									</tr>
+									<tr>
+										<th>Address line 3</th>
+										<td>[[detail_information.address_line_3]]</td>
+									</tr>
+									<tr>
+										<th>Postal code</th>
+										<td>[[detail_information.postal_code]]</td>
+									</tr>
+									<tr>
+										<th>Country</th>
+										<td>[[detail_information.country]]</td>
+									</tr>
+									<tr>
+										<th>State</th>
+										<td>[[detail_information.state]]</td>
+									</tr>
+									<tr>
+										<th>Latitude</th>
+										<td>[[detail_information.latitude]]</td>
+									</tr>
+									<tr>
+										<th>Longitude</th>
+										<td>[[detail_information.longitude]]</td>
+									</tr>
+                					</table>
+                					</div>
+                					</div>
+                				</div>
+                			</b-collapse>
+                		</div>
+                		</section>
+            		</div>
+        		</div>
+        	</div>
+
+
+		</div>
+		</body>
+		<script src="location.js"></script>
+	</html>
