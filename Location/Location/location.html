@@ -36,10 +36,7 @@
 				<b-table 
 				:data="locations" 
 				hoverable narrowed
-				icon-pack="fa-solid"
-				paginated
-				:per-page="10"
-				pagination-size="is-small">
+				icon-pack="fa-solid">
 					<b-table-column label="S.No"
 					field="s_no"
 					numeric v-slot="props"
@@ -629,29 +626,7 @@
 										<th>Active</th>
 										<td>[[detail_information.boolean]]</td>
 									</tr>
-								</table>
-							</div>
-
-						<b-collapse class="card mb-4" animation="slide" #trigger="props" 
-						v-if="is_additional_options_allowed">
-							<div class="card-header" role="button" 
-							v-on:click="is_information_additional_options=!is_information_additional_options">
-								<p class="card-header-title"> 
-									Additional options
-								</p>
-								<a class="card-header-icon">
-			                        <b-icon 
-			                        pack="fa-solid"
-			                        :icon="props.open ? 'angle-down' : 'angle-up'" >
-			                        </b-icon>
-                    			</a>
-							</div>
-						
-						  <div class="card-content" v-if="is_information_additional_options">
-                			<div class="content">
-                				<div class="table-container">
-                					<table class="table is-fullwidth">
-                						<tr>
+                					<tr>
 										<th>Address line 1</th>
 										<td>[[detail_information.address_line_1]]</td>
 									</tr>
@@ -686,13 +661,9 @@
                 					</table>
                 					</div>
                 					</div>
-                				</div>
-                			</b-collapse>
-                		</div>
                 		</section>
             		</div>
         		</div>
-        	</div>
 
 
 		</div>
